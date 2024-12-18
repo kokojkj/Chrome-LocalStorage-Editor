@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome LocalStorage Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css"/>
+    <style>
+        body {
+            background-color: #11111b;
+            color: #bac2de;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            margin: 0;
+        }
+        .terminal {
+            height: 100%;
+            overflow: auto;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal" id="terminal"></div>
+    <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function parseValue(value, type) {
+                try {
+                    switch(type) {
+                        case 'string':
+                            return String(value);
+                        case 'number':
+                            return Number(value);
+                        case 'boolean':
+                            return value.toLowerCase() === 'true';
+                        case 'json':
+                            return JSON.stringify(JSON.parse(value));
+                        default:
+                            return value;
+                    }
+                } catch (error) {
+                    throw new Error(`Invalid ${type} value: ${value}`);
+                }
+            }
+
+            $('#terminal').terminal({
+                list: function() {
+                    const keys = Object.keys(localStorage);
+                    if (keys.length === 0) {
+                        this.echo('LocalStorage is empty.');
+                    } else {
+                        this.echo('LocalStorage keys:');
+                        keys.forEach(key => {
+                            const value = localStorage.getItem(key);
+                            this.echo(`- ${key}`);
+                        });
+                    }
+                },
+                get: function(key) {
+                    if (key) {
+                        const value = localStorage.getItem(key);
+                        if (value !== null) {
+                            this.echo(`${key}: ${value}`);
+                        } else {
+                            this.echo(`No value found for key '${key}'.`);
+                        }
+                    } else {
+                        this.echo('Usage: get [key]');
+                    }
+                },
+                create: function(key, type, value) {
+                    const validTypes = ['string', 'number', 'boolean', 'json'];
+                    
+                    if (!validTypes.includes(type)) {
+                        this.echo(`Invalid type. Supported types: ${validTypes.join(', ')}`);
+                        return;
+                    }
+
+                    if (value === undefined) {
+                        switch(type) {
+                            case 'string': value = ''; break;
+                            case 'number': value = 0; break;
+                            case 'boolean': value = false; break;
+                            case 'json': value = '{}'; break;
+                        }
+                    }
+
+                    try {
+                        const parsedValue = parseValue(value, type);
+                        
+                        localStorage.setItem(key, parsedValue);
+                        this.echo(`Created key '${key}' with type '${type}' and value '${parsedValue}'.`);
+                    } catch (error) {
+                        this.echo(`Error: ${error.message}`);
+                    }
+                },
+                set: function(key, value) {
+                    if (key && value) {
+                        localStorage.setItem(key, value);
+                        this.echo(`Set key '${key}' to '${value}'.`);
+                    } else {
+                        this.echo('Usage: set [key] [value]');
+                    }
+                },
+                remove: function(key) {
+                    if (key) {
+                        this.push(function(confirm) {
+                            if (confirm.toLowerCase() === 'yes' || confirm.toLowerCase() === 'y') {
+                                localStorage.removeItem(key);
+                                this.echo(`key '${key}' Removed from LocalStorage.`);
+                                this.pop();
+                            } else {
+                                this.echo('operation cancelled.');
+                                this.pop();
+                            }
+                        }, {
+                            prompt: `Are you sure you want to remove key : '${key}'? (yes/no) `
+                        });
+                    } else {
+                        this.echo('Usage: remove [key]');
+                    }
+                },
+                clearStorage: function() {
+                    this.push(function(confirm) {
+                        if (confirm.toLowerCase() === 'yes' || confirm.toLowerCase() === 'y') {
+                            localStorage.clear();
+                            this.echo('LocalStorage cleared.');
+                            this.pop();
+                        } else {
+                            this.echo('operation cancelled.');
+                            this.pop();
+                        }
+                    }, {
+                        prompt: 'Are you sure you want to clear ALL keys in LocalStorage? (yes/no) '
+                    });
+                },
+                help: function() {
+                    this.echo("Available Commands:");
+                    this.echo("1. list - List all keys in LocalStorage");
+                    this.echo("2. get [key] - Get value of a key");
+                    this.echo("3. create [key] [type] [value] - Create a new key");
+                    this.echo("4. set [key] [value] - Set new value of an existing key");
+                    this.echo("5. remove [key] - Remove a key from LocalStorage");
+                    this.echo("6. clearStorage - delete all LocalStorage keys");
+                    this.echo("7. help - Show this help menu");
+					this.echo("8. clear - Clear terminal screen");
+
+                    this.echo("\nSupported Types for creating new keys:");
+                    this.echo("- string: for text");
+                    this.echo("- number: for numbers");
+                    this.echo("- boolean: true/false");
+                    this.echo("- json: for JSON");
+                }
+            }, {
+                greetings: [
+                    'Welcome to Chrome LocalStorage Editor',
+                    'Type "help" to see available commands.'
+                ].join('\n'),
+                prompt: '> '
+            });
+        });
+    </script>
+</body>
+</html>
