@@ -1,0 +1,13 @@
+this is Chrome LocalStorage Editor
+a terminal like tool with jquery to create , edit and control Chrome LocalStorage keys
+test it here : https://kokojkj.github.io/Chrome-LocalStorage-Editor/
+
+Commands:
+1. list -used to  List all keys in LocalStorage
+2. get [key] - to Get value of a key
+3. create [key] [type] [value] - to Create a new key
+4. set [key] [value] - to Set new value of an existing key
+5. remove [key] - to Remove a key from LocalStorage
+6. clearStorage -to delete all LocalStorage keys
+7. help -to Show  help menu
+8. clear -tp Clear tool screen
